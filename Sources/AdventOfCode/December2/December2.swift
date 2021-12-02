@@ -20,10 +20,13 @@ struct December2 {
 
     static func partOne() {
         let lines = getLines()
-//        print(lines)
-
         let finalPosition: SubmarinePosition = lines.reduce(
-            into: SubmarinePosition(position: 0, depth: 0)) { partialResult, line in
+            into: SubmarinePosition(
+                position: 0,
+                depth: 0,
+                aim: 0
+            )
+        ) { partialResult, line in
                 partialResult.update(line: line)
             }
         let answer = finalPosition.getAnswer()
@@ -34,6 +37,7 @@ struct December2 {
     struct SubmarinePosition {
         var position: Int
         var depth: Int
+        var aim: Int
 
         mutating func update(line: String) {
             let components = line.split(separator: " ")
@@ -46,10 +50,11 @@ struct December2 {
             switch command {
             case "forward":
                 self.position += value
+                self.depth += self.aim * value
             case "up":
-                self.depth -= value
+                self.aim -= value
             case "down":
-                self.depth += value
+                self.aim += value
             default:
                 fatalError("Fix your input!")
             }
