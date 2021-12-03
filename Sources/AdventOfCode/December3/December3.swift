@@ -33,6 +33,49 @@ enum December3 {
         }
     }
 
+    struct BinaryDiagnosticTwo {
+        let oxygen: Int
+        let co2: Int
+        var lifeSupport: Int {
+            oxygen * co2
+        }
+        init(vectors: [simd_int16]) {
+            self.oxygen = Self.parseOxygen(vectors: vectors, count: 12)
+            self.co2 = Self.parseCo2(vectors: vectors, count: 12)
+        }
+
+        static func filterForPosition(_ position: Int, chosenNumbers: [simd_int16], invert: Bool = false) -> [simd_int16] {
+            let oneNumbers = chosenNumbers.filter {$0[position] == Int32(1)}
+            let zeroNumbers = chosenNumbers.filter {$0[position] == Int32(0)}
+            if invert {
+                return (oneNumbers.count >= zeroNumbers.count) ? zeroNumbers : oneNumbers
+            } else {
+                return (oneNumbers.count >= zeroNumbers.count) ? oneNumbers : zeroNumbers
+            }
+        }
+
+        static func parseOxygen(vectors: [simd_int16], count: Int) -> Int {
+            var chosenNumbers = vectors
+            for index in 0..<count {
+                if chosenNumbers.count == 1 {
+                    break
+                }
+                chosenNumbers = Self.filterForPosition(index, chosenNumbers: chosenNumbers)
+            }
+            return chosenNumbers.first!.binaryToInt
+        }
+        static func parseCo2(vectors: [simd_int16], count: Int) -> Int {
+            var chosenNumbers = vectors
+            for index in 0..<count {
+                print(chosenNumbers)
+                if chosenNumbers.count == 1 {
+                    break
+                }
+                chosenNumbers = Self.filterForPosition(index, chosenNumbers: chosenNumbers, invert: true)
+            }
+            return chosenNumbers.first!.binaryToInt
+        }
+    }
     static func parseLine(_ line: String) -> simd_int16 {
         let components = Array(line).map(String.init)
         let integers = components.compactMap({Int.init($0)}).map(Int32.init)
@@ -57,12 +100,26 @@ enum December3 {
 //        let binInt = Int.init("1110", radix: 2)
 //        print(binInt)
     }
+
+    static func partTwo() {
+        let lines = DecemberIO.getLines()
+        let binaryVectors = lines.map(parseLine(_:))
+        let diagnostics = BinaryDiagnosticTwo(vectors: binaryVectors)
+        print(diagnostics.lifeSupport)
+    }
 }
 
 extension simd_int16 {
     var values: [Int32] {
-        self.indices.map { index in
+        (0..<12).map { index in
             return self[index]
         }
+    }
+    var binaryToInt: Int {
+        let binaryString: String = self.values.reduce("") { partialResult, value in
+            partialResult + "\(value)"
+        }
+        print(binaryString)
+        return Int(binaryString, radix: 2)!
     }
 }
