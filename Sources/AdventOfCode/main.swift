@@ -2,4 +2,5 @@
 //December1.partTwo()
 //December2.partOne()
 //December3.partOne()
-December3.partTwo()
+//December3.partTwo()
+December6.main()
