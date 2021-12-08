@@ -42,7 +42,7 @@ enum December7 {
             .compactMap(Int.init)
         print(positions)
         let maxPos = positions.max()!
-        var minSum = 999999999
+        var minSum = Int.max
         for position in (0...maxPos) {
             let distSum = positions.reduce(0) { partialResult, crabPosition in
                 return partialResult + posDistance(position: position, crabPosition: crabPosition)
