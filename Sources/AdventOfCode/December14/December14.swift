@@ -9,17 +9,6 @@ import Foundation
 
 enum December14 {
 
-    static func performPolymerInsertion(state: [String: Int], pairMap: [String: [String]]) -> [String: Int] {
-        var nextState = [String: Int]()
-        state.forEach { (key: String, value: Int) in
-            let newPairs = pairMap[key]!
-            for newPair in newPairs {
-                nextState[newPair] = nextState[newPair] ?? 0 + value
-            }
-        }
-        return nextState
-    }
-
     static func parsePairMap(lines: [String]) -> PairMap {
         var dict = PairMap()
         for line in lines {
@@ -31,76 +20,79 @@ enum December14 {
         return dict
     }
 
-    static func countMostCommonElement(state: [String: Int]) -> Int {
-        var dict = [Character: Int]()
-        for (key, value) in state {
-            for character in key {
-                dict[character] = dict[character] ?? 0 + value
-            }
+    static func getNextPairCounts(state: PairCounts, pairMap: PairMap) -> PairCounts {
+        var nextState = [Pair: Int]()
+        for (pair, count) in state {
+            let new = pairMap[pair]!
+            let firstKey = "\(pair.first!)\(new)"
+            let secondKey = "\(new)\(pair.last!)"
+            nextState[firstKey] = (nextState[firstKey] ?? 0) + count
+            nextState[secondKey] = (nextState[secondKey] ?? 0) + count
         }
-        print(dict)
-        return 0
+        return nextState
     }
 
-    static func countLeastCommonElement(state: [String: Int]) -> Int {
-        return 0
-    }
-
-    static func sumPairs(state: [String: Int]) -> Int {
-        state.values.reduce(0, +)
-    }
-
-    static func getNextState(state: State, pairMap: PairMap) -> State {
-        let characters = state.map({$0})
-        let pairs = zip(characters.dropLast(), characters.dropFirst()).map({$0})
-        let almostResult = pairs.reduce("") { partialResult, pair in
-            let pairKey = "\(pair.0)\(pair.1)"
-            let newPart = [
-                String(pair.0),
-                String(pairMap[pairKey]!)
-            ].joined()
-            return partialResult + newPart
-        }
-        return almostResult + String(characters.last!)
-    }
-
-    static func getMostAndLeast(state: String) -> MostAndLeastCommonCount {
-        var dict = [Character: Int]()
-        for character in state.map({$0}) {
-            dict[character] = (dict[character] ?? 0) + 1
-        }
-        print(dict)
-        let values = dict.values.map({$0}).sorted()
-        print(values)
+    static func getMostAndLeast(characterCounts: [Character: Int]) -> MostAndLeastCommonCount {
+        let values = characterCounts.values.map({$0}).sorted()
         return MostAndLeastCommonCount(most: values.last!, least: values.first!)
     }
 
-    static func parseState(line: String) -> State {
-        line
+    static func parseState(line: String) -> PairCounts {
+        var state = [Pair: Int]()
+        let characters = line.map({$0})
+        let pairs: [Pair] = zip(
+            characters.dropLast(),
+            characters.dropFirst()
+        ).map { (first, second) in
+            "\(first)\(second)"
+        }
+        for pair in pairs {
+            state[pair] = (state[pair] ?? 0) + 1
+        }
+        return state
+    }
+
+    static func characterCounts(state: PairCounts, lastCharacter: Character) -> [Character: Int] {
+        var dict = [Character: Int]()
+        for (pair, count) in state {
+            // We only count first character in each pair
+            // If we count the second character we would count that character twice
+            let firstCharacter = pair.first!
+            dict[firstCharacter] = (dict[firstCharacter] ?? 0) + count
+        }
+        dict[lastCharacter] = (dict[lastCharacter] ?? 0) + 1
+        return dict
+    }
+
+    static func solvePairCounts(steps: Int, lines: [String], pairMap: PairMap) -> PairCounts {
+        var pairCounts = parseState(line: lines.first!)
+        for step in 0..<steps {
+            pairCounts = getNextPairCounts(state: pairCounts, pairMap: pairMap)
+        }
+        return pairCounts
     }
 
     static func main(){
         let lines = DecemberIO.getLines()
-        print(lines)
         let pairMap = parsePairMap(lines: Array(lines.dropFirst(2)))
-        print(pairMap)
-        var currentState = parseState(line: lines.first!)
-        let steps = 4
-        for step in 0..<steps {
-            print("step: \(step)")
-            print(currentState)
-            currentState = getNextState(state: currentState, pairMap: pairMap)
-        }
-        print(currentState)
-        let results = getMostAndLeast(state: currentState)
-        print(results)
+        let lastCharacter: Character = lines.first!.last!
+        let pairCounts = solvePairCounts(
+            steps: 40,
+            lines: lines,
+            pairMap: pairMap
+        )
+        let characterCounts = characterCounts(
+            state: pairCounts,
+            lastCharacter: lastCharacter
+        )
+        let results = getMostAndLeast(characterCounts: characterCounts)
         print(results.answer)
     }
 }
 
 typealias Pair = String
-typealias PairMap = [String: Character]
-typealias State = String
+typealias PairMap = [Pair: Character]
+typealias PairCounts = [Pair: Int]
 
 struct MostAndLeastCommonCount {
     var most: Int
