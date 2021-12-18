@@ -9,7 +9,53 @@ import Foundation
 public struct PairInput {
     let signalPatterns: [Digit]
     let output: [Digit]
-    func solveOneFourSevenEight() -> PairInput {
+    var allPatterns: [Digit] {
+        signalPatterns + output
+    }
+    func parseFirstTranslationSet() -> [Set<Character>: Int] {
+        var setTranslation = [Set<Character>: Int]()
+        allPatterns.forEach { pattern in
+            if case let .encoded(set) = pattern {
+                if setTranslation.keys.contains(set) {
+                    return
+                }
+                let setSize = set.count
+                let uniqueSizes = Digit.simpleTranslation.keys
+                if uniqueSizes.contains(setSize) {
+                    setTranslation[set] = setSize
+                }
+            }
+        }
+        return setTranslation
+    }
+    func parseSecondTranslationSet(firstSet: [Set<Character>: Int]) -> Set<Set<Character>> {
+        var secondSet = firstSet
+        let allSets: [Set<Character>] = allPatterns.compactMap { pattern -> Set<Character>? in
+            switch pattern {
+            case .encoded(let set):
+                return set
+            default:
+                return nil
+            }
+        }
+        let fullSet: Set<Set<Character>> = Set(allSets)
+        print("fullSet")
+        print(fullSet)
+
+        let firstSets = Set(firstSet.keys)
+        print(type(of: firstSets))
+        let finalSets = fullSet.subtracting(firstSets)
+        print("finalSets")
+        print(finalSets)
+        return finalSets
+    }
+    func solve() -> PairInput {
+        let firstSet = self.parseFirstTranslationSet()
+        let secondSet = self.parseSecondTranslationSet(firstSet: firstSet)
+        print("firstSet")
+        print(firstSet)
+        print("secondSet")
+        print(secondSet)
         return PairInput(
             signalPatterns: self.signalPatterns.map({$0.simpleConversion()}),
             output: output.map({$0.simpleConversion()})
@@ -18,7 +64,7 @@ public struct PairInput {
 }
 public enum Digit {
     case decoded(Int)
-    case encoded(String)
+    case encoded(Set<Character>)
     static var simpleTranslation: [Int: Int] = [
         2: 1,
         4: 4,
@@ -29,12 +75,10 @@ public enum Digit {
         switch self {
         case .decoded:
             return self
-        case .encoded(let string):
-//            print("string \(string)")
-            guard let translation = Self.simpleTranslation[string.count] else {
+        case .encoded(let set):
+            guard let translation = Self.simpleTranslation[set.count] else {
                 return self
             }
-//            print(translation)
             return .decoded(translation)
         }
     }
@@ -48,13 +92,13 @@ public extension PairInput {
             .split(separator: " ")
             .compactMap(String.init)
             .map({ signal in
-                Digit.encoded(signal)
+                Digit.encoded(Set(signal))
             })
         self.output = outputString
             .split(separator: " ")
             .compactMap(String.init)
             .map({ digitString in
-                Digit.encoded(digitString)
+                Digit.encoded(Set(digitString))
             })
     }
 }
@@ -71,11 +115,11 @@ enum December8 {
             )
         }
 //        print(pairs)
-        let solvedPairs = pairs.map {$0.solveOneFourSevenEight()}
+        let solvedPairs = pairs.map {$0.solve()}
 //        print(solvedPairs)
         for pair in solvedPairs {
             let output = pair.output
-            print(output)
+//            print(output)
         }
         let answerSum = solvedPairs.reduce(0) { partialResult, pair in
             partialResult + pair.output.reduce(0, { pairSum, digit in
